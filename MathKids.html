@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Adventure Game</title>
+
+<style>
+body{
+    margin:0;
+    font-family:'Comic Sans MS', sans-serif;
+    background:linear-gradient(135deg,#a18cd1,#fbc2eb);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+#game{
+    background:#fff;
+    width:95%;
+    max-width:700px;
+    border-radius:30px;
+    padding:30px;
+    text-align:center;
+    box-shadow:0 12px 30px rgba(0,0,0,.3);
+}
+
+h1{
+    font-size:3rem;
+    color:#ff5722;
+}
+
+.question{
+    font-size:2.2rem;
+    padding:20px;
+    border-radius:20px;
+    margin:20px 0;
+}
+
+.add{background:#fff176;}
+.sub{background:#aed581;}
+.mul{background:#81d4fa;}
+.div{background:#ffb74d;}
+
+.options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.option{
+    font-size:2rem;
+    padding:20px;
+    border-radius:20px;
+    background:#673ab7;
+    color:#fff;
+    cursor:pointer;
+}
+
+.option:active{
+    transform:scale(0.95);
+}
+
+#feedback{
+    margin-top:25px;
+    font-size:3rem;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+    <h1>🐠 Math Adventure 🦆</h1>
+    <div id="qbox" class="question"></div>
+    <div class="options" id="options"></div>
+    <div id="feedback"></div>
+</div>
+
+<script>
+let questions=[], index=0, score=0;
+const ctx = new (window.AudioContext||window.webkitAudioContext)();
+
+function sound(freq,dur,type="sine"){
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.type=type;
+    o.frequency.value=freq;
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+dur);
+}
+
+function clap(){
+    for(let i=0;i<5;i++) sound(1200+Math.random()*400,0.05,"square");
+}
+
+function boo(){
+    sound(150,0.7,"sawtooth");
+}
+
+function duck(){
+    sound(400,0.3); sound(250,0.4);
+}
+
+function shark(){
+    sound(80,0.6,"triangle");
+}
+
+function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+function genQuestions(){
+    for(let i=0;i<10;i++){
+        let a=rand(1,20),b=rand(1,20);
+        addQ(`${a} + ${b}`,a+b,"add");
+    }
+    for(let i=0;i<10;i++){
+        let a=rand(15,30),b=rand(1,9);
+        addQ(`${a} - ${b}`,a-b,"sub");
+    }
+    for(let i=0;i<10;i++){
+        let a=rand(2,9),b=rand(2,9);
+        addQ(`${a} × ${b}`,a*b,"mul");
+    }
+    for(let i=0;i<10;i++){
+        let b=rand(2,9),a=b*rand(2,9);
+        addQ(`${a} ÷ ${b}`,a/b,"div");
+    }
+}
+
+function addQ(text,ans,type){
+    let opts=[ans];
+    while(opts.length<4){
+        let x=ans+rand(-5,5);
+        if(x>=0 && !opts.includes(x)) opts.push(x);
+    }
+    opts.sort(()=>Math.random()-0.5);
+    questions.push({text,ans,opts,type});
+}
+
+function showQ(){
+    let q=questions[index];
+    let box=document.getElementById("qbox");
+    box.className="question "+q.type;
+    box.innerHTML=`(${index+1}/40) What is ${q.text}?`;
+    let optBox=document.getElementById("options");
+    optBox.innerHTML="";
+    q.opts.forEach(o=>{
+        let d=document.createElement("div");
+        d.className="option";
+        d.innerText=o;
+        d.onclick=()=>check(o);
+        optBox.appendChild(d);
+    });
+    document.getElementById("feedback").innerHTML="";
+}
+
+function check(choice){
+    let q=questions[index];
+    if(choice===q.ans){
+        score++;
+        shark(); clap();
+        document.getElementById("feedback").innerHTML="🦈<br>YOU ARE SHARK!";
+    }else{
+        duck(); boo();
+        document.getElementById("feedback").innerHTML="🦆<br>YOU ARE DUCK!";
+    }
+    setTimeout(()=>{
+        index++;
+        index<40?showQ():result();
+    },1600);
+}
+
+function result(){
+    let p=Math.round(score/40*100);
+    let msg=p>=90?"🏆 Bravo!!!":
+            p>=80?"🌟 Excellent":
+            p>=70?"👏 Great Job!":
+            p>=60?"👍 Well Done":"📚 Back to School";
+    document.getElementById("game").innerHTML=
+        `<h1>Result</h1>
+         <h2 style="font-size:3rem">${score}/40 (${p}%)</h2>
+         <div style="font-size:3.5rem">${msg}</div>`;
+}
+
+genQuestions();
+showQ();
+</script>
+
+</body>
+</html>
